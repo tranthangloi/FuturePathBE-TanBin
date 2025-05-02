@@ -1,0 +1,1 @@
+web: gunicorn FuturePathBE-cap2.wsgi
