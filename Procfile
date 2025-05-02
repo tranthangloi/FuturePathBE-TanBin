@@ -1,1 +1,1 @@
-web: gunicorn FuturePathBE-cap2.wsgi
+web: gunicorn config.wsgi:application
