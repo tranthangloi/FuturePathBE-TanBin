@@ -311,27 +311,36 @@ class ForumPostView(APIView):
         except models.User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Lưu dữ liệu vào database của Django
+        # Lấy role đầu tiên của user từ bảng UserRole
+        user_role = models.UserRole.objects.filter(user=user).first()
+        role_name = user_role.role.name if user_role else "unknown"
+
+        # Lưu bài post vào database
         post = models.ForumPost.objects.create(
             user=user, title=title, content=content, created_at=now()
         )
 
-        # Cập nhật dữ liệu vào Firebase Realtime Database
-        ref = db.reference('forum_posts')  # Cập nhật trong node 'forum_posts'
+        # Dữ liệu gửi lên Firebase
         post_data = {
+            'post_id': post.id,
             'user_id': user.id,
+            'user_name': user.username,
+            'role': role_name,
             'title': title,
             'content': content,
-            'created_at': post.created_at.isoformat(),  # Đảm bảo format chuẩn ISO 8601
+            'created_at': post.created_at.isoformat(),
         }
 
-        # Push dữ liệu lên Firebase
+        # Gửi lên Firebase
+        ref = db.reference('forum_posts')
         ref.push(post_data)
 
-        # Serializer dữ liệu trả về
-        serializer = serializers.ForumPostSerializer(post)
+        # Dữ liệu trả về cho client
+        return Response({
+            "success": True,
+            "data": post_data
+        }, status=status.HTTP_201_CREATED)
 
-        return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
     
 class CommentCreateView(APIView):
     def post(self, request, post_id):
