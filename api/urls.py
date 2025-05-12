@@ -24,4 +24,5 @@ urlpatterns = [
     path('getfullexpert/', views.ExpertInformationListView.as_view(), name='get full expert'),
     path('createtransaction/', views.CreateTransactionView.as_view(),name='create transaction'),
     path('confirmtransaction/<int:transaction_id>/', views.ConfirmTransactionView.as_view(),name='confirm transaction'),
+    path('notification/<int:notification_id>/', views.NotificationDetailView.as_view(), name='notification-detail'),
 ]

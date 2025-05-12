@@ -104,9 +104,10 @@ class RevenueManagementSerializer(serializers.ModelSerializer):
 
 
 class ExpertInformationSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='user.username', read_only=True)
     class Meta:
         model = models.ExpertInformation
-        fields = ['id', 'user', 'expertise', 'experience_years', 'date_of_birth', 'gender','major','workplace','description','certifications', 'account_balance']
+        fields = ['id','name', 'user', 'expertise', 'experience_years', 'date_of_birth', 'gender','major','workplace','description','certifications', 'account_balance']
 
 
 class ConsultantScheduleSerializer(serializers.ModelSerializer):

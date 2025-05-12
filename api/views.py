@@ -626,3 +626,19 @@ class CreateConsultationView(APIView):
             "message": "Consultation created successfully",
             "consultation_id": consultation.id
         }, status=status.HTTP_201_CREATED)
+
+
+class NotificationDetailView(APIView):
+    def get(self, request, notification_id):
+        try:
+            notification = models.Notification.objects.get(id=notification_id)
+            data = {
+                'id': notification.id,
+                'user_id': notification.user.id,
+                'message': notification.message,
+                'created_at': notification.created_at,
+                'status': notification.status
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        except models.Notification.DoesNotExist:
+            return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
