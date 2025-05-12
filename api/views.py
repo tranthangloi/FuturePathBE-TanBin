@@ -11,13 +11,15 @@ from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 from django.shortcuts import get_object_or_404
+from firebase_init import initialize_firebase
+from firebase_admin import db
+from django.utils.timezone import now
 
 def running(request):
     return HttpResponse("App is running")
 
-load_dotenv()  # Tải biến môi trường từ file .env
+load_dotenv()
 
-# Lấy giá trị từ biến môi trường
 access_token = os.getenv('ACCESS_TOKEN')
 
 class LoginView(APIView):
@@ -25,35 +27,28 @@ class LoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        # Kiểm tra thông tin đầu vào
         if not email or not password:
             return Response({"error": "Email và mật khẩu là bắt buộc"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Tìm người dùng qua email
             user = models.User.objects.get(email=email)
         except models.User.DoesNotExist:
             raise AuthenticationFailed("Tài khoản không tồn tại")
 
-        # Kiểm tra mật khẩu bằng Django
         if not check_password(password, user.password):
             raise AuthenticationFailed("Sai mật khẩu")
 
-        # Lấy vai trò người dùng
         try:
             user_role = models.UserRole.objects.get(user=user)
             role = models.Role.objects.get(id=user_role.role.id)
         except (models.UserRole.DoesNotExist, models.Role.DoesNotExist):
             raise AuthenticationFailed("Không tìm thấy vai trò")
 
-        # Tạo token JWT
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        # Lưu token vào session
         request.session['access_token'] = access_token
 
-        # Chuẩn bị dữ liệu trả về
         user_response = {
             "id": user.id,
             "email": user.email,
@@ -61,12 +56,11 @@ class LoginView(APIView):
             "role": role.name
         }
 
-        # Trả về thông tin người dùng và thông báo đăng nhập thành công
         return Response({
             "success": True,
             "message": "Đăng nhập thành công",
             "user": user_response,
-            "expiresIn": 3600  # Token hết hạn sau 1 tiếng
+            "expiresIn": 3600
         }, status=status.HTTP_200_OK)
     
     
@@ -110,8 +104,7 @@ class UpdateUserView(APIView):
             user_to_update = models.User.objects.get(id=user_id)
         except ObjectDoesNotExist:
             return Response({"error": "Không tìm thấy user cần cập nhật"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Update các trường username, email, password nếu có
+        
         username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
@@ -122,7 +115,7 @@ class UpdateUserView(APIView):
             user_to_update.email = email
         if password:
             from django.contrib.auth.hashers import make_password
-            user_to_update.password = make_password(password)  # Mã hóa password luôn cho an toàn
+            user_to_update.password = make_password(password)
 
         user_to_update.save()
 
@@ -289,10 +282,6 @@ class TakeQuizView(APIView):
             },
             "message": "Quiz result saved successfully"
         }, status=status.HTTP_201_CREATED)
-        
-from firebase_init import initialize_firebase
-from firebase_admin import db
-from django.utils.timezone import now
 
 initialize_firebase()
 
@@ -311,16 +300,13 @@ class ForumPostView(APIView):
         except models.User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Lấy role đầu tiên của user từ bảng UserRole
         user_role = models.UserRole.objects.filter(user=user).first()
         role_name = user_role.role.name if user_role else "unknown"
 
-        # Lưu bài post vào database
         post = models.ForumPost.objects.create(
             user=user, title=title, content=content, created_at=now()
         )
 
-        # Dữ liệu gửi lên Firebase
         post_data = {
             'post_id': post.id,
             'user_id': user.id,
@@ -331,11 +317,9 @@ class ForumPostView(APIView):
             'created_at': post.created_at.isoformat(),
         }
 
-        # Gửi lên Firebase
         ref = db.reference('forum_posts')
         ref.push(post_data)
 
-        # Dữ liệu trả về cho client
         return Response({
             "success": True,
             "data": post_data
@@ -363,8 +347,7 @@ class CommentCreateView(APIView):
 
         comment = models.Comment.objects.create(post=post, user=user, content=content)
 
-        # Push comment data to Firebase in a separate node "comments"
-        ref = db.reference('comments')  # Node riêng cho comment
+        ref = db.reference('comments')
         comment_data = {
             'user_id': user.id,
             'post_id': post.id,
@@ -372,7 +355,6 @@ class CommentCreateView(APIView):
             'created_at': comment.created_at.isoformat(),
         }
 
-        # Push data to Firebase Realtime Database under the "comments" node
         comment_ref = ref.push(comment_data)
 
         return Response({
@@ -496,11 +478,9 @@ class ChatMessageView(APIView):
         sender_type = data.get('sender_type')
         message = data.get('message')
 
-        # Kiểm tra dữ liệu đầu vào
         if not user_id or not expert_id or not sender_type or not message:
             return Response({"error": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Lấy user và expert từ cơ sở dữ liệu
         try:
             user = models.User.objects.get(id=user_id)
         except models.User.DoesNotExist:
@@ -511,7 +491,6 @@ class ChatMessageView(APIView):
         except models.ExpertInformation.DoesNotExist:
             return Response({"error": "Expert not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Lưu tin nhắn vào cơ sở dữ liệu Django
         chat_message = models.ChatMessage.objects.create(
             user=user,
             expert=expert,
@@ -520,7 +499,6 @@ class ChatMessageView(APIView):
             timestamp=now()
         )
 
-        # Cập nhật Firebase Realtime Database
         ref = db.reference('chat_messages')
         message_data = {
             'user_id': user.id,
@@ -530,14 +508,11 @@ class ChatMessageView(APIView):
             'timestamp': chat_message.timestamp.isoformat(),
         }
 
-        # Push dữ liệu lên Firebase
         firebase_message_ref = ref.push(message_data)
         
-        # Cập nhật ID Firebase vào Django
         chat_message.firebase_message_id = firebase_message_ref.key
         chat_message.save()
 
-        # Serialize dữ liệu trả về
         serializer = serializers.ChatMessageSerializer(chat_message)
 
         return Response({
@@ -558,11 +533,16 @@ class ExpertInformationDetailView(APIView):
         except models.ExpertInformation.DoesNotExist:
             return Response({"error": "Expert not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Serialize dữ liệu của chuyên gia
         serializer = serializers.ExpertInformationSerializer(expert)
 
         return Response({"expert": serializer.data}, status=status.HTTP_200_OK)
     
+class ExpertInformationListView(APIView):
+    def get(self, request):
+        experts = models.ExpertInformation.objects.all()
+        serializer = serializers.ExpertInformationSerializer(experts, many=True)
+        return Response({"experts": serializer.data}, status=status.HTTP_200_OK)
+
 class CreateTransactionView(APIView):
     def post(self, request):
         user_id = request.data.get('user_id')
@@ -579,12 +559,11 @@ class CreateTransactionView(APIView):
         except models.ExpertInformation.DoesNotExist:
             return Response({"error": "Expert not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Tạo giao dịch với status mặc định là "từ chối" hoặc "hoàn thành" tùy ý
         transaction = models.Transaction.objects.create(
             user=user,
             expert=expert,
             amount=100000.00,
-            transaction_status='reject'  # hoặc 'hoàn thành' nếu bạn muốn
+            transaction_status='reject'
         )
 
         return Response({
@@ -607,3 +586,43 @@ class ConfirmTransactionView(APIView):
 
         return Response({"message": "Transaction confirmed successfully"}, status=status.HTTP_200_OK)
     
+class CreateConsultationView(APIView):
+    def post(self, request):
+        data = request.data
+        user_id = data.get('user_id')
+        expert_id = data.get('expert_id')
+        schedule_id = data.get('schedule_id')
+        reason = data.get('reason', '')
+
+        if not user_id or not expert_id or not schedule_id:
+            return Response({"error": "Missing user_id, expert_id or schedule_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            expert = models.ExpertInformation.objects.get(id=expert_id)
+        except models.ExpertInformation.DoesNotExist:
+            return Response({"error": "Expert not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            schedule = models.ConsultantSchedule.objects.get(id=schedule_id)
+        except models.ConsultantSchedule.DoesNotExist:
+            return Response({"error": "Schedule not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        consultation = models.Consultation.objects.create(
+            user_id=user_id,
+            expert=expert,
+            schedule=schedule,
+            reason=reason,
+            is_confirmed=False
+        )
+
+        message = f"Bạn đã đặt lịch tư vấn với chuyên gia {expert.user.username} vào {schedule.available_date} lúc {schedule.available_time}. Vui lòng chờ xác nhận."
+        notification = models.Notification.objects.create(
+            user_id=user_id,
+            message=message,
+            status="unread"
+        )
+
+        return Response({
+            "message": "Consultation created successfully",
+            "consultation_id": consultation.id
+        }, status=status.HTTP_201_CREATED)

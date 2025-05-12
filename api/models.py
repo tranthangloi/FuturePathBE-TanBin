@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password
 
 class User(models.Model):
     username = models.CharField(max_length=255, unique=True)
@@ -92,6 +91,7 @@ class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default='unread')
 
     class Meta:
         db_table = 'Notification'

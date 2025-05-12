@@ -25,11 +25,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = models.User
         fields = ['id', 'username', 'email', 'password']
         extra_kwargs = {
-            'password': {'write_only': True}  # Không trả mật khẩu về client
+            'password': {'write_only': True}
         }
 
     def validate_password(self, value):
-        # Bước này đảm bảo mật khẩu được mã hóa mỗi lần
         return make_password(value)
 
 
@@ -65,7 +64,7 @@ class ChatbotHistorySerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Notification
-        fields = ['id', 'user', 'message', 'created_at']
+        fields = ['id', 'user', 'message', 'created_at', 'status']
 
 
 class ForumPostSerializer(serializers.ModelSerializer):

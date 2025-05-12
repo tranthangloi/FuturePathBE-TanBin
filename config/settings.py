@@ -32,15 +32,15 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'ERROR',  # Hoặc 'DEBUG', 'INFO' tùy thuộc vào mức độ log bạn muốn thấy
+            'level': 'ERROR',
             'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout',  # Xuất lỗi ra terminal
+            'stream': 'ext://sys.stdout',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'ERROR',  # Chỉ hiển thị các lỗi mức độ ERROR trở lên
+            'level': 'ERROR',
             'propagate': True,
         },
     },
@@ -74,6 +74,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 
@@ -96,8 +97,8 @@ TEMPLATES = [
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=20),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,  # Bật quay vòng refresh token
-    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist refresh token sau khi sử dụng
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 

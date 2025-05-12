@@ -1,5 +1,4 @@
 from django.urls import path
-from django.contrib import admin
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 
@@ -22,6 +21,7 @@ urlpatterns = [
     path('SendChat/', views.ChatMessageView.as_view(), name='Send Chat Message'),
     path('chathistory/<int:user_id>/<int:expert_id>/', views.ChatHistoryView.as_view(), name='chat-history'),
     path('getexpert/<int:expert_id>/', views.ExpertInformationDetailView.as_view(), name='get expert'),
+    path('getfullexpert/', views.ExpertInformationListView.as_view(), name='get full expert'),
     path('createtransaction/', views.CreateTransactionView.as_view(),name='create transaction'),
     path('confirmtransaction/<int:transaction_id>/', views.ConfirmTransactionView.as_view(),name='confirm transaction'),
 ]
