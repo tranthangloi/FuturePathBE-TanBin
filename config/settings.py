@@ -77,6 +77,7 @@ ROOT_URLCONF = 'config.urls'
 
 CORS_ALLOW_ALL_ORIGINS = [
     "http://localhost:5173",
+    "https://futurepath-production.up.railway.app",
 ]
 
 
