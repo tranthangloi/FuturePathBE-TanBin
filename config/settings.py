@@ -25,7 +25,10 @@ SECRET_KEY = 'django-insecure-3)l&6g6t_s+di&mt(u08p^&yy@7-l0obv4s4@spi9bu*=p!moi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'futurepathbe-tanbin-production.up.railway.app',  # Domain backend
+    'localhost',  # Cho dev (không cần port)
+]
 
 LOGGING = {
     'version': 1,
