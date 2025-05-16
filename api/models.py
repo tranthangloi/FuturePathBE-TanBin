@@ -186,7 +186,8 @@ class Transaction(models.Model):
 class ConsultantSchedule(models.Model):
     expert = models.ForeignKey(ExpertInformation, on_delete=models.CASCADE)
     available_date = models.DateField()
-    available_time = models.TimeField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
 
     class Meta:
         db_table = 'ConsultantSchedule'
