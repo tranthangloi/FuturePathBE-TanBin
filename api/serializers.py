@@ -92,9 +92,10 @@ class BannedUserHistorySerializer(serializers.ModelSerializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
     class Meta:
         model = models.Transaction
-        fields = ['id', 'user', 'expert', 'amount', 'transaction_date', 'transaction_status']
+        fields = ['id', 'user', 'username', 'expert', 'amount', 'transaction_date', 'transaction_status']
 
 
 class RevenueManagementSerializer(serializers.ModelSerializer):

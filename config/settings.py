@@ -72,20 +72,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',  # Địa chỉ của frontend của bạn
-]
 ROOT_URLCONF = 'config.urls'
 
-CORS_ALLOW_ALL_ORIGINS = False
-
-CORS_ALLOW_METHODS = [
-    'GET',
-    'POST',
-    'PUT',
-    'DELETE',
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {

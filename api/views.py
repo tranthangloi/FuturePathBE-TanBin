@@ -14,6 +14,12 @@ from django.shortcuts import get_object_or_404
 from firebase_init import initialize_firebase
 from firebase_admin import db
 from django.utils.timezone import now
+from django.db.models import Sum
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Sum
+from datetime import datetime
+
 
 def running(request):
     return HttpResponse("App is running")
@@ -642,3 +648,94 @@ class NotificationDetailView(APIView):
             return Response(data, status=status.HTTP_200_OK)
         except models.Notification.DoesNotExist:
             return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+class RevenueOverviewAPIView(APIView):
+    def get(self, request):
+        now = timezone.now()
+        start_of_week = now - timedelta(days=now.weekday())
+        start_of_month = now.replace(day=1)
+        start_of_year = now.replace(month=1, day=1)
+
+        def get_total(queryset):
+            return queryset.aggregate(total=Sum('amount'))['total'] or 0
+
+        data = {
+            "week_revenue": float(get_total(models.Transaction.objects.filter(transaction_date__gte=start_of_week, transaction_status='complete'))),
+            "month_revenue": float(get_total(models.Transaction.objects.filter(transaction_date__gte=start_of_month, transaction_status='complete'))),
+            "year_revenue": float(get_total(models.Transaction.objects.filter(transaction_date__gte=start_of_year, transaction_status='complete'))),
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+class RevenueComparisonAPIView(APIView):
+    def get(self, request):
+        now = timezone.now()
+        first_day_this_month = now.replace(day=1)
+        last_day_last_month = first_day_this_month - timedelta(days=1)
+        first_day_last_month = last_day_last_month.replace(day=1)
+
+        def get_total(queryset):
+            return queryset.aggregate(total=Sum('amount'))['total'] or 0
+
+        this_month = get_total(models.Transaction.objects.filter(transaction_date__gte=first_day_this_month, transaction_status='complete'))
+        last_month = get_total(models.Transaction.objects.filter(transaction_date__range=(first_day_last_month, last_day_last_month), transaction_status='complete'))
+
+        data = {
+            "this_month": float(this_month),
+            "last_month": float(last_month),
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+class ExpertMonthlySummaryAPIView(APIView):
+    def get(self, request, expert_id):
+        now = timezone.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        transactions = models.Transaction.objects.filter(
+            transaction_date__gte=start_of_month,
+            transaction_status='complete',
+            expert_id=expert_id
+        )
+
+        total_revenue = transactions.aggregate(total=Sum('amount'))['total'] or 0
+        total_appointments = transactions.count()
+
+        data = { 
+            "month": start_of_month.strftime("%Y-%m"),
+            "total_revenue": float(total_revenue),
+            "total_appointments": total_appointments,
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+class TransactionByExpertAPIView(APIView):
+    def get(self, request, expert_id):
+        transactions = models.Transaction.objects.filter(expert_id=expert_id)
+        serializer = serializers.TransactionSerializer(transactions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class UserRevenueComparisonAPIView(APIView):
+    def get(self, request, user_id):
+        now = timezone.now()
+        first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day_last_month = first_day_this_month - timedelta(seconds=1)
+        first_day_last_month = last_day_last_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        def get_total_for_user(start_date, end_date):
+            return models.Transaction.objects.filter(
+                user_id=user_id,
+                transaction_date__gte=start_date,
+                transaction_date__lte=end_date,
+                transaction_status='complete'
+            ).aggregate(total=Sum('amount'))['total'] or 0
+
+        this_month_total = get_total_for_user(first_day_this_month, now)
+        last_month_total = get_total_for_user(first_day_last_month, last_day_last_month)
+
+        data = {
+            "user_id": user_id,
+            "this_month": float(this_month_total),
+            "last_month": float(last_month_total),
+        }
+        return Response(data, status=status.HTTP_200_OK)

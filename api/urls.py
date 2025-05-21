@@ -25,4 +25,9 @@ urlpatterns = [
     path('createtransaction/', views.CreateTransactionView.as_view(),name='create transaction'),
     path('confirmtransaction/<int:transaction_id>/', views.ConfirmTransactionView.as_view(),name='confirm transaction'),
     path('notification/<int:notification_id>/', views.NotificationDetailView.as_view(), name='notification-detail'),
+    path('revenue-overview/', views.RevenueOverviewAPIView.as_view(), name='revenue-overview'),
+    path('revenue-comparison/', views.RevenueComparisonAPIView.as_view(), name='revenue-comparison'),
+    path('monthly-expert-RevenueAndCustomer/<int:expert_id>/', views.ExpertMonthlySummaryAPIView.as_view(), name='monthly-expert-RevenueAndCustomer'),
+    path('Transaction-Expert/<int:expert_id>/', views.TransactionByExpertAPIView.as_view(), name='Transaction-Expert'),
+    path('user-revenue-comparison/<int:user_id>/', views.UserRevenueComparisonAPIView.as_view(), name='user-revenue-comparison'),
 ]
